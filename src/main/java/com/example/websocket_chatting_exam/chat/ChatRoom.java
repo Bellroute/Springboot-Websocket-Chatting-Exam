@@ -1,13 +1,14 @@
 package com.example.websocket_chatting_exam.chat;
 
-import lombok.Builder;
 import lombok.Getter;
-import org.springframework.web.socket.WebSocketSession;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.UUID;
 
 @Getter
+@Setter
+@NoArgsConstructor
 public class ChatRoom {
 
     /*
@@ -16,26 +17,14 @@ public class ChatRoom {
 
     private String roomId;
     private String name;
-    private Set<WebSocketSession> sessions = new HashSet<>(); // 입장한 클라이언트들의 정보
 
-    @Builder
-    public ChatRoom(String roomId, String name) {
-        this.roomId = roomId;
-        this.name = name;
+    public static ChatRoom create(String name) {
+        ChatRoom chatRoom = new ChatRoom();
+        chatRoom.roomId = UUID.randomUUID().toString();
+        chatRoom.name = name;
+        return chatRoom;
     }
 
-    // 입장, 대화하기의 기능을 분기하기위한 메소드
-    public void handleActions(WebSocketSession session, ChatMessage chatMessage, ChatService chatService) {
-        if (chatMessage.getType().equals(ChatMessage.MessageType.ENTER)) {
-            // 채팅 입장 시 클라이언트 session을 리스트에 추가해둠
-            sessions.add(session);
-            chatMessage.setMessage(chatMessage.getSender() + "님이 입장했습니다.");
-        }
-        sendMessage(chatMessage, chatService);
-    }
-
-    // 채팅룸의 모든 session에게 메시지를 발송
-    public <T> void sendMessage(T message, ChatService chatService) {
-        sessions.parallelStream().forEach(session -> chatService.sendMessage(session, message));
-    }
+    // pub/sub 방식을 이용하면 구독자 관리가 알아서 되므로 웹소켓 세션 관리가 필요 없어짐.
+    // 발송의 구현도 알아서 해결되므로 일일이 클라이언트에게 메시지를 발송하는 구현이 필요없어짐.
 }
